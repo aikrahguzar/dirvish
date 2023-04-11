@@ -23,6 +23,7 @@
 
 (require 'dired)
 (require 'transient)
+(require 'subr-x)
 (declare-function ansi-color-apply-on-region "ansi-color")
 (declare-function dirvish-fd-find "dirvish-fd")
 (declare-function dirvish-noselect-tramp "dirvish-extras")
@@ -557,7 +558,7 @@ ARGS is a list of keyword arguments for `dirvish' struct."
           (l-beg (line-beginning-position)) (l-end (line-end-position))
           (f-wid 0) f-str f-name f-attrs f-type hl-face left right)
       (setq hl-face
-            (and (eq (or f-beg l-beg) pos) dirvish-hide-cursor 'dirvish-hl-line))
+            (and (<= l-beg pos l-end) 'dirvish-hl-line))
       (when f-beg
         (setq f-str (buffer-substring f-beg f-end)
               f-wid (string-width f-str)
