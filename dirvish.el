@@ -548,17 +548,15 @@ ARGS is a list of keyword arguments for `dirvish' struct."
    (setf dirvish--working-preview-dispathchers (dirvish--preview-dps-validate))
    (setf dirvish--working-attrs (dirvish--attrs-expand attrs))))
 
-(defun dirvish--render-attrs-1 (height width pos remote fns ov align-to)
-  "HEIGHT WIDTH POS REMOTE FNS OV ALIGN-TO."
-  (forward-line (- 0 height))
-  (cl-dotimes (_ (* (if (eq major-mode 'dired-mode) 2 5) height))
+(defun dirvish--render-attrs-1 (beg end width remote fns ov align-to hl-face)
+  "BEG END WIDTH REMOTE FNS OV ALIGN-TO HL-FACE."
+  (goto-char beg)
+  (while (< (point) end)
     (when (eobp) (cl-return))
     (let ((f-beg (dired-move-to-filename))
           (f-end (dired-move-to-end-of-filename t))
           (l-beg (line-beginning-position)) (l-end (line-end-position))
-          (f-wid 0) f-str f-name f-attrs f-type hl-face left right)
-      (setq hl-face
-            (and (<= l-beg pos l-end) 'dirvish-hl-line))
+          (f-wid 0) f-str f-name f-attrs f-type left right)
       (when f-beg
         (setq f-str (buffer-substring f-beg f-end)
               f-wid (string-width f-str)
@@ -597,24 +595,29 @@ ARGS is a list of keyword arguments for `dirvish' struct."
            (overlay-put ovr 'after-string (concat spc right))))))
     (forward-line 1)))
 
-(defun dirvish--render-attrs (&optional clear)
-  "Render or CLEAR attributes in DV's dirvish buffer."
+(defun dirvish--jit-attributes (beg end)
+  "BEG END HL-FACE."
+  (setq beg (progn (goto-char beg) (pos-bol)))
+  (setq end (progn (goto-char end) (pos-eol)))
   (cl-loop with remote = (dirvish-prop :remote) with gui = (dirvish-prop :gui)
-           with fns = () with height = (frame-height)
+           with fns = ()
            with remain = (- (window-width) (if gui 1 2))
            for (_ width pred render ov) in dirvish--working-attrs
-           do (remove-overlays (point-min) (point-max) ov t)
+           do (remove-overlays beg end ov t)
            when (eval pred `((win-width . ,remain)))
            do (setq remain (- remain width)) (push render fns)
            initially
-           (remove-overlays (point-min) (point-max) 'dirvish-l-end-ov t)
-           (remove-overlays (point-min) (point-max) 'dirvish-r-end-ov t)
+           (remove-overlays beg end 'dirvish-l-end-ov t)
+           (remove-overlays beg end 'dirvish-r-end-ov t)
            finally
            (with-silent-modifications
-             (unless clear
-               (save-excursion
-                 (dirvish--render-attrs-1 height remain (point)
-                                          remote fns ov (if gui 0 2)))))))
+             (save-excursion
+               (dirvish--render-attrs-1 beg end remain
+                                        remote fns ov (if gui 0 2) nil)))))
+
+(defun dirvish--render-attrs (&optional clear)
+  "Render or CLEAR attributes in DV's dirvish buffer."
+  (ignore clear))
 
 ;;;; Advices
 
@@ -910,12 +913,13 @@ When PROC finishes, fill preview buffer with process result."
 
 ;;;; Builder
 
+(put 'dirvish-hl-line 'evaporate t)
 (dirvish-define-attribute hl-line
   "Highlight current line.
 This attribute is enabled when `dirvish-hide-cursor' is non-nil."
   (when hl-face
     (let ((ov (make-overlay l-beg (1+ l-end))))
-      (overlay-put ov 'face hl-face) `(ov . ,ov))))
+      (overlay-put ov 'category 'dirvish-hl-line) `(ov . ,ov))))
 
 (dirvish-define-attribute symlink-target
   "Hide symlink target."
@@ -1140,6 +1144,8 @@ LEVEL is the depth of current window."
         (maphash (lambda (k v) (puthash k v dirvish--attrs-hash)) data)
         (when setup
           (dirvish-prop :vc-backend vc)
+          (jit-lock-register #'dirvish--jit-attributes)
+          (jit-lock-refontify)
           (run-hooks 'dirvish-setup-hook))
         (unless (derived-mode-p 'wdired-mode) (dirvish-update-body-h)))))
   (delete-process proc)
