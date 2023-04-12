@@ -244,22 +244,19 @@ See `dirvish-subtree-file-viewer' for details"
                                           buffer-file-name)))))))
     (switch-to-buffer orig-buffer)))
 
+(put 'dirvish-subtree 'evaporate t)
 (dirvish-define-attribute subtree-state
   "A indicator for directory expanding state."
   :when (or dirvish-subtree-always-show-state dirvish-subtree--overlays)
   :width 1
   (let ((state-str
-         (propertize (if (eq (car f-type) 'dir)
+         (concat (propertize (if (eq (car f-type) 'dir)
                          (if (dirvish-subtree--expanded-p)
                              (car dirvish-subtree--state-icons)
                            (cdr dirvish-subtree--state-icons))
-                       " ")))
-        (ov (make-overlay (1+ l-beg) (1+ l-beg))))
-    (when hl-face
-      (add-face-text-property 0 1 hl-face t state-str))
-    (overlay-put ov 'category 'dirvish-subtree)
-    (overlay-put ov 'after-string state-str)
-    `(ov . ,ov)))
+                       " "))
+                 (and (not dired-hide-details-mode) " "))))
+    (put-text-property (1+ l-beg) (+ 2 l-beg) 'display state-str)))
 
 (defun dirvish-subtree--move-to-file (file depth)
   "Move to FILE at subtree DEPTH."
@@ -358,11 +355,14 @@ See `dirvish-subtree-file-viewer' for details"
 (defun dirvish-subtree-toggle ()
   "Insert subtree at point or remove it if it was not present."
   (interactive)
-  (if (dirvish-subtree--expanded-p)
-      (progn (dired-next-line 1) (dirvish-subtree-remove))
-    (condition-case err (dirvish-subtree--insert)
-      ('file-error (dirvish-subtree--view-file))
-      ('error (message "%s" (cdr err))))))
+  (save-excursion
+    (if (dirvish-subtree--expanded-p)
+        (progn (dired-next-line 1) (dirvish-subtree-remove))
+      (condition-case err (dirvish-subtree--insert)
+        ('file-error (dirvish-subtree--view-file))
+        ('error (message "%s" (cdr err))))))
+  (with-silent-modifications
+    (remove-text-properties (pos-bol) (pos-eol) '(fontified))))
 
 (defun dirvish-subtree-toggle-or-open (ev)
   "Toggle the subtree if in a dirline, otherwise open the file.

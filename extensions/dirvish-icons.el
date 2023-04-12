@@ -63,20 +63,13 @@ The value should be a integer between 23 to 128."
 (dirvish-define-attribute all-the-icons
   "File icons provided by `all-the-icons.el'."
   :width (+ (length dirvish-icon-delimiter) 2)
-  (let* ((offset `(:v-adjust ,dirvish-all-the-icons-offset))
-         (height `(:height ,dirvish-all-the-icons-height))
-         (face (cond (hl-face `(:face ,hl-face))
-                     ((eq dirvish-all-the-icons-palette 'all-the-icons) nil)
-                     (t `(:face ,dirvish-all-the-icons-palette))))
-         (icon-attrs (append face offset height))
-         (icon (if (eq (car f-type) 'dir)
-                   (apply #'all-the-icons-icon-for-dir f-name icon-attrs)
-                 (apply #'all-the-icons-icon-for-file f-str icon-attrs)))
-         (icon-str (concat icon (propertize dirvish-icon-delimiter 'face hl-face)))
-         (ov (make-overlay (1- f-beg) f-beg)))
-    (overlay-put ov 'category 'dirvish-icon)
-    (overlay-put ov 'after-string icon-str)
-    `(ov . ,ov)))
+  (let* ((icon (if (eq (car f-type) 'dir)
+                   (all-the-icons-icon-for-dir f-name :height dirvish-all-the-icons-height
+                                               :v-adjust dirvish-all-the-icons-offset)
+                 (all-the-icons-icon-for-file f-str :height dirvish-all-the-icons-height
+                                              :v-adjust dirvish-all-the-icons-offset)))
+         (icon-str (concat dirvish-icon-delimiter icon dirvish-icon-delimiter)))
+    (put-text-property (1- f-beg) f-beg 'display icon-str)))
 
 (dirvish-define-attribute vscode-icon
   "File icons provided by `vscode-icon.el'."

@@ -730,7 +730,6 @@ When FORCE, ensure the preview get refreshed."
           ((and (bobp) dirvish-use-header-line)
            (goto-char (dirvish-prop :content-begin))))
     (when dirvish-hide-cursor (dired-move-to-filename))
-    (dirvish--render-attrs)
     (when-let ((filename (dired-get-filename nil t)))
       (dirvish-prop :index filename)
       (let ((h-buf (dirvish--util-buffer 'header dv t))
@@ -739,7 +738,7 @@ When FORCE, ensure the preview get refreshed."
         (dirvish-prop :last-index filename)
         (dirvish-debounce nil
           (if (not (car (dv-layout dv)))
-              (and (< emacs-major-version 29) (force-mode-line-update))
+              (force-mode-line-update)
             (when (and dirvish-use-mode-line (buffer-live-p f-buf))
               (with-current-buffer f-buf (force-mode-line-update)))
             (when (and dirvish-use-header-line (buffer-live-p h-buf))
