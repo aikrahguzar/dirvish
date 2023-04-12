@@ -58,6 +58,8 @@ Values are interpreted as follows:
 The value should be a integer between 23 to 128."
   :group 'dirvish :type 'integer)
 
+(put 'dirvish-icon 'evaporate t)
+
 (dirvish-define-attribute all-the-icons
   "File icons provided by `all-the-icons.el'."
   :width (+ (length dirvish-icon-delimiter) 2)
@@ -72,6 +74,7 @@ The value should be a integer between 23 to 128."
                  (apply #'all-the-icons-icon-for-file f-str icon-attrs)))
          (icon-str (concat icon (propertize dirvish-icon-delimiter 'face hl-face)))
          (ov (make-overlay (1- f-beg) f-beg)))
+    (overlay-put ov 'category 'dirvish-icon)
     (overlay-put ov 'after-string icon-str)
     `(ov . ,ov)))
 

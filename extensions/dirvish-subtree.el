@@ -182,6 +182,8 @@ creation even the entry is in nested subtree nodes."
         (if (or (= (length str) 0) (string-prefix-p "//DIRED-OPTIONS//" str)) ""
           (substring (buffer-string) 0 -1))))))
 
+(put 'dirvish-subtree 'evaporate t)
+
 (defun dirvish-subtree--insert ()
   "Insert subtree under this directory."
   (let* ((dir (dired-get-filename))
@@ -203,11 +205,11 @@ creation even the entry is in nested subtree nodes."
         (while (< (point) end)
           (add-text-properties (point) (1+ (point)) `(line-prefix ,prefix-len))
           (forward-line 1)))
+      (overlay-put ov 'category 'dirvish-subtree)
       (overlay-put ov 'line-prefix
                    (propertize prefix 'face 'dirvish-subtree-guide))
       (overlay-put ov 'dired-subtree-name dir)
       (overlay-put ov 'dired-subtree-depth depth)
-      (overlay-put ov 'evaporate t)
       (push ov dirvish-subtree--overlays))))
 
 (defun dirvish-subtree--revert (&optional clear)
@@ -255,6 +257,7 @@ See `dirvish-subtree-file-viewer' for details"
         (ov (make-overlay (1+ l-beg) (1+ l-beg))))
     (when hl-face
       (add-face-text-property 0 1 hl-face t state-str))
+    (overlay-put ov 'category 'dirvish-subtree)
     (overlay-put ov 'after-string state-str)
     `(ov . ,ov)))
 
