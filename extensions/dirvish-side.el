@@ -56,8 +56,6 @@ If non-nil, expand all the parent directories of current buffer's
 filename until the project root when opening a side session."
   :group 'dirvish :type 'boolean)
 
-(defconst dirvish-side-header (dirvish--mode-line-fmt-setter '(project) nil t))
-
 (defun dirvish-side-file-open-fn ()
   "Called before opening a file in side sessions."
   (let* ((dv (dirvish-curr)) (layout (car (dv-layout dv)))
@@ -113,8 +111,6 @@ filename until the project root when opening a side session."
            (let (buffer-list-update-hook) (dirvish-find-entry-a dir))
            (if dirvish-side-auto-expand (dirvish-subtree-expand-to file)
              (dired-goto-file file))
-           (dirvish-prop :cus-header 'dirvish-side-header)
-           (dirvish--setup-mode-line (car (dv-layout dv)))
            (dirvish-update-body-h))
          (setq dirvish--this nil))))))
 
@@ -134,19 +130,7 @@ filename until the project root when opening a side session."
             (dirvish-side-auto-expand
              (dirvish-subtree-expand-to bname))
             (t (dired-goto-file bname)))
-      (dirvish-prop :cus-header 'dirvish-side-header)
       (dirvish-update-body-h))))
-
-(dirvish-define-mode-line project
-  "Return a string showing current project."
-  (let ((project (dirvish--get-project-root))
-        (face (if (dirvish--window-selected-p dv) 'dired-header 'shadow)))
-    (if project
-        (setq project (file-name-base (directory-file-name project)))
-      (setq project "-"))
-    (format " %s %s"
-            (propertize "Project:" 'face face)
-            (propertize project 'face 'font-lock-string-face))))
 
 ;;;###autoload
 (define-minor-mode dirvish-side-follow-mode
