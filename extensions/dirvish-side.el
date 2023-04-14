@@ -128,7 +128,13 @@ filename until the project root when opening a side session."
       (dirvish-find-entry-a path)
       (cond ((not bname) nil)
             (dirvish-side-auto-expand
-             (dirvish-subtree-expand-to bname))
+             (if dirvish-setup-done
+                 (dirvish-subtree-expand-to bname)
+               (let ((hooksym (make-symbol (concat "dirvish-side--expand-to-" bname))))
+                 (fset hooksym (lambda ()
+                                 (remove-hook 'dirvish-setup-hook hooksym t)
+                                 (dirvish-subtree-expand-to bname)))
+                 (add-hook 'dirvish-setup-hook hooksym t t))))
             (t (dired-goto-file bname)))
       (dirvish-update-body-h))))
 
