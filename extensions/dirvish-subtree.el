@@ -260,11 +260,12 @@ See `dirvish-subtree-file-viewer' for details"
 
 (defun dirvish-subtree--move-to-file (file depth)
   "Move to FILE at subtree DEPTH."
-  (let (stop f-beg)
+  (let ((case-fold-search nil)
+        stop f-beg)
     (while (and (not stop)
-                (= (forward-line) 0)
-                (setq f-beg (dired-move-to-filename)))
-      (and (eq depth (dirvish-subtree--depth))
+                (search-forward file nil 'move))
+      (and (setq f-beg (dired-move-to-filename))
+           (eq depth (dirvish-subtree--depth))
            (equal file (buffer-substring f-beg (dired-move-to-end-of-filename)))
            (setq stop t)))
     stop))
@@ -273,8 +274,8 @@ See `dirvish-subtree-file-viewer' for details"
   "Go to line describing TARGET and expand its parent directories."
   (interactive
    (list (directory-file-name (expand-file-name
-	                       (read-file-name "Expand to file: "
-			                       (dired-current-directory))))))
+                               (read-file-name "Expand to file: "
+                                               (dired-current-directory))))))
   (let ((file (dired-get-filename nil t)) (dir (dired-current-directory)))
     (cond ((equal file target) target)
           ((and file (string-prefix-p file target))
@@ -288,8 +289,6 @@ See `dirvish-subtree-file-viewer' for details"
            (let ((depth (dirvish-subtree--depth))
                  (next (car (split-string (substring target (length dir)) "/"))))
              (goto-char (dired-subdir-min))
-             (goto-char (next-single-property-change (point) 'dired-filename))
-             (forward-line -1)
              ;; TARGET is either not exist or being hidden (#135)
              (when (dirvish-subtree--move-to-file next depth)
                (dirvish-subtree-expand-to target))))
