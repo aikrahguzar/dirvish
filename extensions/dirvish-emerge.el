@@ -129,16 +129,15 @@ The predicate takes the following arguments:
 
 The predicate is consumed by `dirvish-emerge-groups'."
   (declare (indent defun) (doc-string 2))
-  `(let* ((fn (lambda (local-name full-name type attrs)
-                (ignore local-name full-name type attrs) ,@body))
-          (pair (assq ',name dirvish-emerge--available-preds))
-          (val (cons ',name (cons fn ,docstring))))
+  `(let* ((fn (byte-compile
+               (lambda (local-name full-name type attrs)
+                 (ignore local-name full-name type attrs) ,@body)))
+          (val (cons fn ,docstring)))
      (setf dirvish-emerge--max-pred-name-len
            (max dirvish-emerge--max-pred-name-len
                 (length (format "%s" ',name))))
-     (if pair
-         (setcdr (assq ',name dirvish-emerge--available-preds) val)
-       (push val dirvish-emerge--available-preds))))
+     (setf (alist-get ',name dirvish-emerge--available-preds)
+           val)))
 
 (dirvish-emerge-define-predicate recent-files-2h
   "File modified within 2 hours."
@@ -169,7 +168,9 @@ The predicate is consumed by `dirvish-emerge-groups'."
 ;; user can.
 (dirvish-emerge-define-predicate executables
   "Matches executables."
-  (eq ?x (aref (file-attribute-modes attrs) 3)))
+  (and (eq (car type) 'file)
+       (progn (when (cdr type) (setq attrs (file-attributes (cdr type))))
+              (eq ?x (aref (file-attribute-modes attrs) 3)))))
 
 (cl-defgeneric dirvish-emerge-read-recipe (recipe &optional obj)
   "Read RECIPE from user input and optionally save it to OBJ.")
@@ -212,10 +213,10 @@ The predicate is consumed by `dirvish-emerge-groups'."
   (pcase-let ((`(,type . ,val) recipe))
     (pcase type
       ('regex
-       `(lambda (local-name _ _ _) (string-match ,val local-name)))
+       (lambda (local-name _ _ _) (string-match val local-name)))
       ('extensions
        (let ((exts (format "\\.\\(%s\\)$" (mapconcat #'concat val "\\|"))))
-         `(lambda (local-name _ _ _) (string-match ,exts local-name))))
+         (lambda (local-name _ type _) (and (eq (car type) 'file) (string-match exts local-name)))))
       ('predicate
        (cadr (assq (cdr recipe) dirvish-emerge--available-preds))))))
 

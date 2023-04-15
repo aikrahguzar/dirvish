@@ -94,25 +94,43 @@ filename until the project root when opening a side session."
    for dv = (with-current-buffer b (dirvish-curr))
    thereis (and dv (eq 'side (car (dv-type dv))) w)))
 
-(defun dirvish-side--auto-jump ()
-  "Select latest buffer file in the visible `dirvish-side' session."
-  (run-with-timer
-   0.5 nil
-   (lambda ()
-     (when-let* (((not dirvish--this))
-                 (dir (or (dirvish--get-project-root) default-directory))
-                 (win (dirvish-side--session-visible-p))
-                 (dv (with-selected-window win (dirvish-curr)))
-                 ((not (active-minibuffer-window)))
-                 (file buffer-file-name))
-       (with-selected-window win
-         (when dir
-           (setq dirvish--this dv)
-           (let (buffer-list-update-hook) (dirvish-find-entry-a dir))
-           (if dirvish-side-auto-expand (dirvish-subtree-expand-to file)
-             (dired-goto-file file))
-           (dirvish-update-body-h))
-         (setq dirvish--this nil))))))
+(defun dirvish-side--auto-expand-to (bname)
+  "Expand to BNAME in subtree of WIN."
+  (let ((hooksym (make-symbol (concat "dirvish-side--expand-to-" bname))))
+    (fset hooksym (lambda ()
+                    (remove-hook 'dirvish-setup-hook hooksym t)
+                    (dirvish-subtree-expand-to bname)
+                    (dired-move-to-filename)
+                    (dirvish-update-body-h)
+                    (when (fboundp 'hl-line-highlight) (hl-line-highlight))))
+    (if dirvish-setup-done
+        (funcall hooksym)
+      (add-hook 'dirvish-setup-hook hooksym t t))))
+
+(let ((timer nil))
+  (defun dirvish-side--auto-jump (_)
+    "Select latest buffer file in the visible `dirvish-side' session."
+    (unless timer
+      (setq timer
+            (run-with-idle-timer
+             0.1 nil
+             (lambda ()
+               (setq timer nil)
+               (when-let* (((not dirvish--this))
+                           (dir (or (dirvish--get-project-root) default-directory))
+                           (win (dirvish-side--session-visible-p))
+                           (dv (with-selected-window win (dirvish-curr)))
+                           ((not (active-minibuffer-window)))
+                           (file buffer-file-name))
+                 (with-selected-window win
+                   (when dir
+                     (setq dirvish--this dv)
+                     (dirvish-find-entry-a dir)
+                     (if dirvish-side-auto-expand
+                         (progn (dirvish--init-session dv)
+                                (dirvish-side--auto-expand-to file))
+                       (dired-goto-file file)))
+                   (setq dirvish--this nil)))))))))
 
 (defun dirvish-side--new (path)
   "Open a side session in PATH."
@@ -127,14 +145,7 @@ filename until the project root when opening a side session."
       (setq dirvish--this dv)
       (dirvish-find-entry-a path)
       (cond ((not bname) nil)
-            (dirvish-side-auto-expand
-             (if dirvish-setup-done
-                 (dirvish-subtree-expand-to bname)
-               (let ((hooksym (make-symbol (concat "dirvish-side--expand-to-" bname))))
-                 (fset hooksym (lambda ()
-                                 (remove-hook 'dirvish-setup-hook hooksym t)
-                                 (dirvish-subtree-expand-to bname)))
-                 (add-hook 'dirvish-setup-hook hooksym t t))))
+            (dirvish-side-auto-expand (dirvish-side--auto-expand-to bname))
             (t (dired-goto-file bname)))
       (dirvish-update-body-h))))
 
@@ -146,8 +157,11 @@ buffer's filename.  It will also visits the latest `project-root'
 after switching to a new project."
   :init-value nil :global t :group 'dirvish
   (if dirvish-side-follow-mode
-      (add-hook 'buffer-list-update-hook #'dirvish-side--auto-jump)
-    (remove-hook 'buffer-list-update-hook #'dirvish-side--auto-jump)))
+      (progn
+        (add-hook 'window-buffer-change-functions #'dirvish-side--auto-jump)
+        (add-hook 'window-selection-change-functions #'dirvish-side--auto-jump))
+    (remove-hook 'window-buffer-change-functions #'dirvish-side--auto-jump)
+    (remove-hook 'window-selection-change-functions #'dirvish-side--auto-jump)))
 
 ;;;###autoload
 (defun dirvish-side (&optional path)
