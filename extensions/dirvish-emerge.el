@@ -170,7 +170,7 @@ The predicate is consumed by `dirvish-emerge-groups'."
   "Matches executables."
   (and (eq (car type) 'file)
        (progn (when (cdr type) (setq attrs (file-attributes (cdr type))))
-              (eq ?x (aref (file-attribute-modes attrs) 3)))))
+              (and attrs (eq ?x (aref (file-attribute-modes attrs) 3))))))
 
 (cl-defgeneric dirvish-emerge-read-recipe (recipe &optional obj)
   "Read RECIPE from user input and optionally save it to OBJ.")
