@@ -695,19 +695,20 @@ When FORCE, ensure the preview get refreshed."
     (when (eobp) (forward-line -1))
     (when (invisible-p (point))
       (goto-char (next-single-char-property-change (point) 'invisible)))
-    (when-let ((filename (dired-get-filename nil t)))
-      (dirvish-prop :index filename)
-      (let ((last-index (dirvish-prop :last-index))
-            (buf (current-buffer)))
-        (dirvish-prop :last-index filename)
-        (dirvish-debounce nil
-          (dolist (seg dirvish-used-mode-line-segments)
-            (with-current-buffer buf
-              (when-let ((fun (intern-soft (format "dirvish-%S-ml" seg))))
-                (funcall fun dv))))
-          (force-mode-line-update)
-          (when (and (car (dv-layout dv)) (or force (not (equal last-index filename))))
-            (dirvish--preview-update dv filename)))))))
+    (let ((filename (dired-get-filename nil t))
+          (buf (current-buffer))
+          (last-index (dirvish-prop :last-index)))
+      (when filename
+        (dirvish-prop :index filename)
+        (dirvish-prop :last-index filename))
+      (dirvish-debounce nil
+        (dolist (seg dirvish-used-mode-line-segments)
+          (with-current-buffer buf
+            (when-let ((fun (intern-soft (format "dirvish-%S-ml" seg))))
+              (funcall fun dv))))
+        (force-mode-line-update)
+        (when (and filename (car (dv-layout dv)) (or force (not (equal last-index filename))))
+          (dirvish--preview-update dv filename))))))
 
 (defun dirvish-insert-entry-h (entry buffer)
   "Add ENTRY or BUFFER name to `dirvish--history'."
