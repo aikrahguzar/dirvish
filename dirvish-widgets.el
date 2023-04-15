@@ -368,7 +368,7 @@ GROUP-TITLES is a list of group titles."
   "Current file's index and total files count."
   (let ((cur-pos (- (line-number-at-pos (point)) 1))
         (fin-pos (number-to-string (- (line-number-at-pos (point-max)) 2))))
-    (format " %d / %s " cur-pos (propertize fin-pos 'face 'bold))))
+    (format " %d/%s " cur-pos (propertize fin-pos 'face 'bold))))
 
 (dirvish-define-mode-line free-space
   "Amount of free space on `default-directory''s file system."
