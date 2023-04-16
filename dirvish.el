@@ -329,6 +329,17 @@ A dirvish preview dispatcher is a function consumed by
        (put (quote ,ml-name) 'risky-local-variable t)
        (defun ,ml-name (dv) ,docstring (ignore dv) (setq ,ml-name (progn ,@body))))))
 
+(defmacro dirvish-with-transient-setup (hook cond &rest body)
+  "Execute BODY immediately if COND is met or else immediately in HOOK."
+  (declare (indent defun))
+  (let ((hooksym (gensym "dirvish-transient-setup")))
+    `(if ,cond
+         (progn ,@body)
+       (fset ',hooksym
+             (lambda () (remove-hook ,hook ',hooksym 95)
+               ,@body))
+       (add-hook ,hook ',hooksym t t))))
+
 ;;;; Helpers
 
 (defun dirvish--hide-dired-header ()
@@ -913,6 +924,7 @@ Dirvish sets `revert-buffer-function' to this function."
   (dirvish--hide-dired-header)
   (when ignore-auto ; meaning it is called interactively from user
     (setq-local dirvish--attrs-hash (make-hash-table))
+    (setq-local dirvish-setup-done nil)
     (dirvish-data-for-dir default-directory (current-buffer) t))
   (run-hooks 'dirvish-after-revert-hook))
 

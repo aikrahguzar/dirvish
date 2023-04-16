@@ -96,16 +96,11 @@ filename until the project root when opening a side session."
 
 (defun dirvish-side--auto-expand-to (bname)
   "Expand to BNAME in subtree of WIN."
-  (let ((hooksym (make-symbol (concat "dirvish-side--expand-to-" bname))))
-    (fset hooksym (lambda ()
-                    (remove-hook 'dirvish-setup-hook hooksym t)
-                    (dirvish-subtree-expand-to bname)
-                    (dired-move-to-filename)
-                    (dirvish-update-body-h)
-                    (when (fboundp 'hl-line-highlight) (hl-line-highlight))))
-    (if dirvish-setup-done
-        (funcall hooksym)
-      (add-hook 'dirvish-setup-hook hooksym t t))))
+  (dirvish-with-transient-setup 'dirvish-setup-hook dirvish-setup-done
+    (dirvish-subtree-expand-to bname)
+    (dired-move-to-filename)
+    (dirvish-update-body-h)
+    (when (fboundp 'hl-line-highlight) (hl-line-highlight))))
 
 (let ((timer nil))
   (defun dirvish-side--auto-jump (_)
