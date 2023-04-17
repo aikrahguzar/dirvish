@@ -228,7 +228,8 @@ When CLEAR, remove all subtrees in the buffer."
                      (not (dirvish-subtree--expanded-p)))
             (dirvish-subtree--insert)))
      finally (and index (if clear (dired-goto-file index)
-                          (dirvish-subtree-expand-to index))))))
+                          (dirvish-subtree-expand-to index))
+                  (hl-line-mode)))))
 
 (defun dirvish-subtree-default-file-viewer (orig-buffer)
   "Default `dirvish-subtree-file-viewer'.
@@ -277,7 +278,7 @@ See `dirvish-subtree-file-viewer' for details"
                                (read-file-name "Expand to file: "
                                                (dired-current-directory))))))
   (let ((file (dired-get-filename nil t)) (dir (dired-current-directory)))
-    (cond ((equal file target) target)
+    (cond ((equal file target) (dired-move-to-filename) target)
           ((and file (string-prefix-p file target))
            (unless (dirvish-subtree--expanded-p) (dirvish-subtree--insert))
            (let ((depth (1+ (dirvish-subtree--depth)))

@@ -14,6 +14,7 @@
 ;;; Code:
 
 (require 'dirvish-subtree)
+(declare-function dirvish-side--auto-jump nil)
 
 (defcustom dirvish-side-display-alist
   '((side . left) (slot . -1))

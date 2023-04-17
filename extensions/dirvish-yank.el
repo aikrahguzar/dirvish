@@ -192,7 +192,6 @@ RANGE can be `buffer', `session', `all'."
               (pop-to-buffer comp-buffer)))))
       (setq dirvish-yank-log-buffers (remove proc-buf dirvish-yank-log-buffers))
       (when (eq buffer (current-buffer))
-        (revert-buffer)
         (when (boundp 'dirvish-emerge--just-yanked)
           (setq-local dirvish-emerge--just-yanked (mapcar #'file-name-nondirectory srcs))
           (when (boundp 'dirvish-emerge-groups)
@@ -203,9 +202,10 @@ RANGE can be `buffer', `session', `all'."
                           ('dired-make-relative-symlink "New Relative Symlinks")
                           ('dired-hardlink "New Hardlinks")
                           ('rsync "New Rsynced Files"))))
-                (cl-callf2 push `(,name (predicate . just-yanked)) dirvish-emerge-groups)
-                (dirvish-with-transient-setup 'dirvish-after-revert-hook nil
-                  (pop dirvish-emerge-groups)))))
+              (cl-callf2 push `(,name (predicate . just-yanked)) dirvish-emerge-groups)
+              (dirvish-with-transient-setup 'dirvish-after-revert-hook nil
+                (pop dirvish-emerge-groups)))))
+        (revert-buffer)
         (dirvish-update-body-h)))))
 
 (defun dirvish-yank-proc-filter (proc string)

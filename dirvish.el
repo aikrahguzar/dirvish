@@ -330,7 +330,7 @@ A dirvish preview dispatcher is a function consumed by
        (defun ,ml-name (dv) ,docstring (ignore dv) (setq ,ml-name (progn ,@body))))))
 
 (defmacro dirvish-with-transient-setup (hook cond &rest body)
-  "Execute BODY immediately if COND is met or else immediately in HOOK."
+  "Execute BODY immediately if COND is met or else in HOOK."
   (declare (indent defun))
   (let ((hooksym (gensym "dirvish-transient-setup")))
     `(if ,cond
@@ -1049,8 +1049,6 @@ LEVEL is the depth of current window."
         (when setup
           (dirvish-prop :vc-backend vc)
           (run-hooks 'dirvish-setup-hook)
-          (jit-lock-register #'dirvish--jit-attributes)
-          (jit-lock-refontify)
           (setq-local dirvish-setup-done t))
         (unless (derived-mode-p 'wdired-mode) (dirvish-update-body-h)))))
   (delete-process proc)
@@ -1106,6 +1104,8 @@ Run `dirvish-setup-hook' afterwards when SETUP is non-nil."
           (dolist (win util-windows) (fit-window-to-buffer win 2 1))))
       (unless (dirvish-prop :cached)
         (dirvish-data-for-dir default-directory (current-buffer) t)
+        (jit-lock-register #'dirvish--jit-attributes)
+        (jit-lock-refontify)
         (dirvish-prop :cached t))
     (setq dirvish--this dv)))
 
