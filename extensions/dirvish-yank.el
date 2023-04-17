@@ -163,7 +163,7 @@ RANGE can be `buffer', `session', `all'."
 (defun dirvish-yank-proc-sentinel (proc _exit)
   "Sentinel for yank task PROC."
   (pcase-let ((proc-buf (process-buffer proc))
-              (`(,buffer ,_ ,_ ,method) (process-get proc 'details))
+              (`(,buffer ,srcs ,_ ,method) (process-get proc 'details))
               (status (process-status proc))
               (success (eq (process-exit-status proc) 0)))
     (when (memq status '(exit signal))
@@ -192,8 +192,21 @@ RANGE can be `buffer', `session', `all'."
               (pop-to-buffer comp-buffer)))))
       (setq dirvish-yank-log-buffers (remove proc-buf dirvish-yank-log-buffers))
       (when (eq buffer (current-buffer))
-        (with-current-buffer buffer
-          (revert-buffer) (dirvish-update-body-h))))))
+        (revert-buffer)
+        (when (boundp 'dirvish-emerge--just-yanked)
+          (setq-local dirvish-emerge--just-yanked (mapcar #'file-name-nondirectory srcs))
+          (when (boundp 'dirvish-emerge-groups)
+            (let ((name (pcase method
+                          ('dired-copy-file "Copied Files")
+                          ('dired-rename-file "Moved Files")
+                          ('make-symbolic-link "New Symlinks")
+                          ('dired-make-relative-symlink "New Relative Symlinks")
+                          ('dired-hardlink "New Hardlinks")
+                          ('rsync "New Rsynced Files"))))
+                (cl-callf2 push `(,name (predicate . just-yanked)) dirvish-emerge-groups)
+                (dirvish-with-transient-setup 'dirvish-after-revert-hook nil
+                  (pop dirvish-emerge-groups)))))
+        (dirvish-update-body-h)))))
 
 (defun dirvish-yank-proc-filter (proc string)
   "Filter for yank task PROC's STRING."

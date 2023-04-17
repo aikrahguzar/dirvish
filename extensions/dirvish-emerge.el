@@ -114,6 +114,7 @@ turned on in the buffer."
 
 (defvar dirvish-emerge--max-pred-name-len 0)
 (defvar dirvish-emerge--available-preds '())
+(defvar dirvish-emerge--just-yanked nil)
 
 (defmacro dirvish-emerge-define-predicate (name docstring &rest body)
   "Define a group predicate NAME with BODY.
@@ -142,14 +143,12 @@ The predicate is consumed by `dirvish-emerge-groups'."
 (dirvish-emerge-define-predicate recent-files-2h
   "File modified within 2 hours."
   (let ((mtime (file-attribute-modification-time attrs)))
-    (and (listp mtime)
-         (< (float-time (time-subtract (current-time) mtime)) 7200))))
+    (and mtime (time-less-p nil (time-add mtime 7200)))))
 
 (dirvish-emerge-define-predicate recent-files-today
   "File modified today."
   (let ((mtime (file-attribute-modification-time attrs)))
-    (and (listp mtime)
-         (< (float-time (time-subtract (current-time) mtime)) 86400))))
+    (and mtime (time-less-p nil (time-add mtime 86400)))))
 
 (dirvish-emerge-define-predicate directories
   "Matches directories."
@@ -162,6 +161,10 @@ The predicate is consumed by `dirvish-emerge-groups'."
 (dirvish-emerge-define-predicate symlinks
   "Matches symlimks."
   (cdr type))
+
+(dirvish-emerge-define-predicate just-yanked
+  "Files yanked during last dirvish yank operation."
+  (member local-name dirvish-emerge--just-yanked))
 
 ;; Note the behavior of this predicate doesn't exactly match `file-executable-p'.
 ;; It checks if the owner of the file can execute it and not if the current
