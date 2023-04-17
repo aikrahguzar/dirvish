@@ -215,20 +215,20 @@ creation even the entry is in nested subtree nodes."
 (defun dirvish-subtree--revert (&optional clear)
   "Reinsert saved subtree nodes into the buffer.
 When CLEAR, remove all subtrees in the buffer."
-  (cl-loop
-   with filenames = (cl-loop for o in dirvish-subtree--overlays
-                             collect (overlay-get o 'dired-subtree-name))
-   with index = (dirvish-prop :old-index)
-   with clear = (or clear (bound-and-true-p dirvish-emerge--group-overlays))
-   initially (setq dirvish-subtree--overlays nil)
-   for filename in filenames
-   do (if clear (when (dired-goto-file filename)
-                  (dired-next-line 1) (dirvish-subtree-remove))
-        (when (and (dirvish-subtree-expand-to filename)
-                   (not (dirvish-subtree--expanded-p)))
-          (dirvish-subtree--insert)))
-   finally (and index (if clear (dired-goto-file index)
-                        (dirvish-subtree-expand-to index)))))
+  (dirvish-with-transient-setup 'dirvish-setup-hook dirvish-setup-done
+    (cl-loop
+     with filenames = (cl-loop for o in dirvish-subtree--overlays
+                               collect (overlay-get o 'dired-subtree-name))
+     with index = (dirvish-prop :old-index)
+     initially (setq dirvish-subtree--overlays nil)
+     for filename in filenames
+     do (if clear (when (dired-goto-file filename)
+                    (dired-next-line 1) (dirvish-subtree-remove))
+          (when (and (dirvish-subtree-expand-to filename)
+                     (not (dirvish-subtree--expanded-p)))
+            (dirvish-subtree--insert)))
+     finally (and index (if clear (dired-goto-file index)
+                          (dirvish-subtree-expand-to index))))))
 
 (defun dirvish-subtree-default-file-viewer (orig-buffer)
   "Default `dirvish-subtree-file-viewer'.
