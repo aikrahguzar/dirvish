@@ -192,24 +192,20 @@ creation even the entry is in nested subtree nodes."
     (dirvish-data-for-dir dir (current-buffer) nil)
     (with-silent-modifications
       (save-excursion
-        (setq beg (progn (move-end-of-line 1) (insert "\n") (point)))
+        (setq beg (progn (goto-char (pos-eol)) (insert "\n") (point)))
         (setq end (progn (insert listing) (1+ (point))))))
     (let* ((ov (make-overlay beg end))
            (parent (dirvish-subtree--parent (1- beg)))
            (p-depth (and parent (1+ (overlay-get parent 'dired-subtree-depth))))
            (depth (or p-depth 1))
-           (prefix (apply #'concat (make-list depth dirvish-subtree-prefix)))
-           (prefix-len (length prefix)))
-      (save-excursion
-        (goto-char beg)
-        (while (< (point) end)
-          (add-text-properties (point) (1+ (point)) `(line-prefix ,prefix-len))
-          (forward-line 1)))
+           (prefix (propertize (apply #'concat (make-list depth
+                                                          dirvish-subtree-prefix))
+                               'face 'dirvish-subtree-guide)))
       (overlay-put ov 'category 'dirvish-subtree)
-      (overlay-put ov 'line-prefix
-                   (propertize prefix 'face 'dirvish-subtree-guide))
       (overlay-put ov 'dired-subtree-name dir)
       (overlay-put ov 'dired-subtree-depth depth)
+      (overlay-put ov 'field 'dirvish-subtree)
+      (overlay-put ov 'line-prefix prefix)
       (push ov dirvish-subtree--overlays))))
 
 (defun dirvish-subtree--revert (&optional clear)
@@ -314,7 +310,7 @@ See `dirvish-subtree-file-viewer' for details"
               (beg (overlay-start ov))
               (end (overlay-end ov)))
     (goto-char beg)
-    (dired-previous-line 1)
+    (forward-line -1)
     (cl-loop for o in (overlays-in (point-min) (point-max))
              when (and (overlay-get o 'dired-subtree-depth)
                        (>= (overlay-start o) beg)
@@ -357,12 +353,12 @@ See `dirvish-subtree-file-viewer' for details"
   (interactive)
   (save-excursion
     (if (dirvish-subtree--expanded-p)
-        (progn (dired-next-line 1) (dirvish-subtree-remove))
+        (progn (forward-line) (dirvish-subtree-remove))
       (condition-case err (dirvish-subtree--insert)
         ('file-error (dirvish-subtree--view-file))
         ('error (message "%s" (cdr err))))))
   (with-silent-modifications
-    (remove-text-properties (pos-bol) (pos-eol) '(fontified))))
+    (remove-text-properties (pos-bol) (1+ (pos-eol)) '(fontified))))
 
 (defun dirvish-subtree-toggle-or-open (ev)
   "Toggle the subtree if in a dirline, otherwise open the file.

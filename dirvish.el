@@ -657,12 +657,12 @@ buffer, it defaults to filename under the cursor when it is nil."
 
 (defun dirvish-dired-noselect-a (fn dir &optional flags)
   "Return buffer for DIR with FLAGS, FN is `dired-noselect'."
-  (let* ((key (file-name-as-directory (expand-file-name dir)))
+  (let* ((key (file-name-as-directory (expand-file-name (if (stringp dir) dir (car dir)))))
          (this dirvish--this)
          (dv (if (and this (eq this-command 'dired-other-frame)) (dirvish-new)
                (or this (car (dirvish--find-reusable)) (dirvish-new))))
          (bname buffer-file-name)
-         (remote (file-remote-p dir))
+         (remote (file-remote-p key))
          (flags (or flags (dv-ls-switches dv)))
          (buffer (alist-get key (dv-roots dv) nil nil #'equal))
          (new-buffer-p (not buffer)))
