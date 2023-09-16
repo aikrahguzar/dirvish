@@ -95,19 +95,13 @@ The value should be a integer between 23 to 128."
 (dirvish-define-attribute nerd-icons
   "File icons provided by `nerd-icons.el'."
   :width (+ (length dirvish-icon-delimiter) 2)
-  (let* ((offset `(:v-adjust ,dirvish-nerd-icons-offset))
-         (height `(:height ,dirvish-nerd-icons-height))
-         (face (cond (hl-face `(:face ,hl-face))
-                     ((eq dirvish-nerd-icons-palette 'nerd-icons) nil)
-                     (t `(:face ,dirvish-nerd-icons-palette))))
-         (icon-attrs (append face offset height))
-         (icon (if (eq (car f-type) 'dir)
-                   (apply #'nerd-icons-icon-for-dir f-name icon-attrs)
-                 (apply #'nerd-icons-icon-for-file f-str icon-attrs)))
-         (icon-str (concat icon (propertize dirvish-icon-delimiter 'face hl-face)))
-         (ov (make-overlay (1- f-beg) f-beg)))
-    (overlay-put ov 'after-string icon-str)
-    `(ov . ,ov)))
+  (let* ((icon (if (eq (car f-type) 'dir)
+                   (nerd-icons-icon-for-dir f-name :v-adjust dirvish-nerd-icons-offset
+                                            :height dirvish-nerd-icons-height)
+                 (nerd-icons-icon-for-file f-str :v-adjust dirvish-nerd-icons-offset
+                                           :height dirvish-nerd-icons-height)))
+         (icon-str (concat dirvish-icon-delimiter icon (propertize dirvish-icon-delimiter))))
+    (put-text-property (1- f-beg) f-beg 'display icon-str)))
 
 (dirvish-define-attribute vscode-icon
   "File icons provided by `vscode-icon.el'."
