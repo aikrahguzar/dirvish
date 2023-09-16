@@ -367,8 +367,8 @@ See `dirvish-subtree-file-viewer' for details"
     (if (dirvish-subtree--expanded-p)
         (progn (forward-line) (dirvish-subtree-remove))
       (condition-case err (dirvish-subtree--insert)
-        ('file-error (dirvish-subtree--view-file))
-        ('error (message "%s" (cdr err))))))
+        (file-error (dirvish-subtree--view-file))
+        (error (message "%s" (cdr err))))))
   (with-silent-modifications
     (remove-text-properties (pos-bol) (1+ (pos-eol)) '(fontified))))
 
