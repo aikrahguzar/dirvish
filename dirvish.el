@@ -679,7 +679,8 @@ buffer, it defaults to filename under the cursor when it is nil."
         (setq buffer (dirvish-noselect-tramp fn dir flags remote)))
       (with-current-buffer buffer (dirvish-init-dired-buffer))
       (push (cons key buffer) (dv-roots dv))
-      (push (cons key buffer) dired-buffers))
+      (push (cons key buffer) dired-buffers)
+      (cl-callf2 cl-delete-if-not #'buffer-live-p dired-buffers :key #'cdr))
     (with-current-buffer buffer
       (cond (new-buffer-p nil)
             ((and (not remote) (not (equal flags dired-actual-switches)))
@@ -719,7 +720,8 @@ When FORCE, ensure the preview get refreshed."
       (dirvish-debounce nil
         (dolist (seg dirvish-used-mode-line-segments)
           (with-current-buffer buf
-            (when-let ((fun (intern-soft (format "dirvish-%S-ml" seg))))
+            (when-let ((fun (intern-soft (format "dirvish-%S-ml" seg)))
+                       (functionp fun))
               (funcall fun dv))))
         (force-mode-line-update)
         (when (and filename (car (dv-layout dv)) (or force (not (equal last-index filename))))

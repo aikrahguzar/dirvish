@@ -390,7 +390,7 @@ DESC and HIDE are the group title and visibility respectively."
                             'font-lock-face
                             '(:inherit dirvish-emerge-group-title
                                        :strike-through t))))
-    (propertize (format "%s%s%s\n" prefix title suffix)
+    (propertize (format "%s%s%s" prefix title suffix)
                 'keymap dirvish-emerge-group-heading-map)))
 
 (defun dirvish-emerge--insert-group (group)
@@ -400,7 +400,7 @@ DESC and HIDE are the group title and visibility respectively."
     (when (listp files)
       (setq empty (not files)
             files (mapconcat #'concat (nreverse files) "")))
-    (unless empty (insert (dirvish-emerge--group-heading desc hide)))
+    (unless empty (insert (dirvish-emerge--group-heading desc hide) "\n"))
     (unless hide (insert files))
     (let ((o (make-overlay beg (point))))
       (overlay-put o 'evaporate t)
