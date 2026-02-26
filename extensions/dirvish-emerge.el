@@ -375,6 +375,9 @@ When RE-READ, read groups from .dir-locals.el regardless of cache."
 (defvar dirvish-emerge-group-heading-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "TAB") 'dirvish-emerge-toggle-current-group)
+    (define-key map (kbd "m") #'dirvish-emerge-mark-group)
+    (define-key map (kbd "u") #'dirvish-emerge-unmark-group)
+    (define-key map (kbd "t") #'dirvish-emerge-toggle-marks-in-group)
     map)
   "Keymap used when over a group heading.")
 
@@ -576,6 +579,27 @@ Press again to set the value for the group"))
                        (overlay-end o)))))
    do (push (list idx desc hide files) groups)
    finally (dirvish-emerge--insert-groups (nreverse groups) pos)))
+
+(defun dirvish-emerge-mark-group ()
+  "Mark all files in the current group."
+  (interactive)
+  (save-excursion
+    (let ((ov (dirvish-emerge--get-group-overlay)))
+      (dired-mark-files-in-region (overlay-start ov) (overlay-end ov)))))
+
+(defun dirvish-emerge-unmark-group ()
+  "Unmark all files in the current group."
+  (interactive)
+  (let ((dired-marker-char ?\s))
+    (dirvish-emerge-mark-group)))
+
+(defun dirvish-emerge-toggle-marks-in-group ()
+  "Toggle the mark of each files in the current group."
+  (interactive)
+  (let ((ov (dirvish-emerge--get-group-overlay)))
+    (save-excursion
+      (with-restriction (overlay-start ov) (overlay-end ov)
+        (dired-toggle-marks)))))
 
 (provide 'dirvish-emerge)
 ;;; dirvish-emerge.el ends here
